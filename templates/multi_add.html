@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form action="" method="post" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table border="1">
+        <thead>
+        <tr>
+            <th>标题</th>
+            <th>URL</th>
+            <th>Name</th>
+            <th>父权限</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for form in formset %}
+            <tr>
+                {% for field in form %}
+                    <td>
+                        {{ field }}
+                        <span style="color:red">{{ field.errors.0 }}</span>
+                    </td>
+
+                {% endfor %}
+
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <hr/>
+    <input type="submit" value="提交">
+</form>
+
+
+</body>
+</html>
