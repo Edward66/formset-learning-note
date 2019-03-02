@@ -43,17 +43,14 @@ def multi_add(request):
     :param request:
     :return:
     """
-    formset_class = formset_factory(MultiPermissionForm, extra=2)  # 在内部生成2个form表单
+    formset_class = formset_factory(MultiPermissionForm, extra=2)
     if request.method == 'GET':
         formset = formset_class()
         return render(request, 'multi_add.html', {'formset': formset})
     formset = formset_class(data=request.POST)
-    # [form(字段,错误信息),form(字段,错误信息),form(字段,错误信息)......]
     if formset.is_valid():
         flag = True
-        # print(formset.cleaned_data)  # 如果不填写任何内容，formset就不会进行表单验证，而提交过来两空字典 [{}, {}]
-        # [{},{},{}......]
-        post_row_list = formset.cleaned_data  # 检查formset中有没有错误信息，没有则将用户提交的数据取到。有错误信息就报错
+        post_row_list = formset.cleaned_data
         for i in range(0, formset.total_form_count()):
             row = post_row_list[i]
             if not row:
@@ -62,8 +59,6 @@ def multi_add(request):
                 obj = models.Permission(**row)
                 obj.validate_unique()
                 obj.save()
-                # post_row_list[i]
-                # formset.errors[i]  # 如果这一句执行了，cleaned_data就会检测到错误信息从而报错，所以要在for循环前给cleaned_data赋一个变量
             except Exception as e:
                 formset.errors[i].update(e)
                 flag = False
