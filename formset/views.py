@@ -1,40 +1,8 @@
 from django.shortcuts import render, HttpResponse
-from django import forms
 from django.forms import formset_factory
 
 from formset import models
-
-
-class MultiPermissionForm(forms.Form):
-    title = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
-    url = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
-    name = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
-    menu_id = forms.ChoiceField(
-        choices=[(None, '------')],
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        required=False
-    )
-
-    pid_id = forms.ChoiceField(
-        choices=[(None, '-------')],
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        required=False
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['menu_id'].choices += models.Menu.objects.values_list('id', 'title')
-        self.fields['pid_id'].choices += models.Permission.objects.filter(pid__isnull=True).exclude(
-            menu__isnull=True).values_list('id', 'title')
+from .forms.formset import MultiPermissionForm, MultiUpdatePermissionForm
 
 
 def multi_add(request):
@@ -67,3 +35,35 @@ def multi_add(request):
         else:
             return render(request, 'multi_add.html', {'formset': formset})
     return render(request, 'multi_add.html', {'formset': formset})
+
+
+def multi_edit(request):
+    formset_class = formset_factory(MultiUpdatePermissionForm, extra=0)  # 默认等于1，如果不想让它多增加一个，就把默认改成0
+    if request.method == 'GET':
+        formset = formset_class(
+            initial=models.Permission.objects.all().values('id', 'title', 'name', 'url', 'menu_id', 'pid_id'))
+        return render(request, 'multi_edit.html', {'formset': formset})
+
+    formset = formset_class(data=request.POST)
+    if formset.is_valid():
+        post_row_list = formset.cleaned_data
+        flag = True
+        for i in range(0, formset.total_form_count()):
+            row = post_row_list[i]
+            if not row:
+                continue
+            permission_id = row.pop('id')
+            try:
+                permission_obj = models.Permission.objects.filter(id=permission_id).first()
+                for key, value in row.items():
+                    setattr(permission_obj, key, value)
+                permission_obj.validate_unique()
+                permission_obj.save()
+            except Exception as e:
+                formset.errors[i].update(e)
+                flag = False
+        if flag:
+            return HttpResponse('提交成功')
+        else:
+            return render(request, 'multi_edit.html', {'formset': formset})
+    return render(request, 'multi_edit.html', {'formset': formset})

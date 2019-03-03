@@ -5,6 +5,7 @@ from formset import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    re_path(r'multi_add', views.multi_add),
+    re_path(r'multi_add/', views.multi_add),
+    re_path(r'multi_edit/', views.multi_edit),
 
 ]
